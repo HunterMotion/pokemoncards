@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Adicionar Carta TCG</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: url('https://example.com/background-image.jpg') no-repeat center center fixed;
+            background-size: cover;
+            margin: 0;
+            padding: 0;
+            color: #333;
+        }
+
+        .container {
+            padding: 20px;
+        }
+
+        input[type="text"], input[type="number"] {
+            width: 100%;
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 5px;
+            border: 1px solid #ccc;
+        }
+
+        .card-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+            justify-content: center;
+            list-style: none;
+            padding: 0;
+        }
+
+        .card-list li {
+            width: 18%;
+            min-width: 200px;
+            box-sizing: border-box;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .card-list img {
+            width: 100px;
+            height: 140px;
+            object-fit: cover;
+            margin-bottom: 10px;
+        }
+
+        .card-info {
+            text-align: center;
+        }
+
+        .card-info button {
+            padding: 5px 10px;
+            background-color: #007bff;
+            border: none;
+            border-radius: 5px;
+            color: #fff;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+
+        .card-info button:hover {
+            background-color: #0056b3;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0,0,0,0.4);
+            justify-content: center;
+            align-items: center;
+        }
+
+        .modal-content {
+            background-color: #fefefe;
+            margin: 5% auto;
+            padding: 20px;
+            border: 1px solid #888;
+            width: 80%;
+            max-width: 500px;
+            border-radius: 10px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .modal-header h2 {
+            margin: 0;
+        }
+
+        .modal-header .close {
+            background-color: #aaa;
+            border: none;
+            border-radius: 5px;
+            color: #fff;
+            cursor: pointer;
+            padding: 5px 10px;
+            font-size: 18px;
+        }
+
+        .modal-header .close:hover {
+            background-color: #888;
+        }
+
+        .modal-body {
+            margin-top: 20px;
+        }
+
+        .modal-body img {
+            width: 100px;
+            height: 140px;
+            object-fit: cover;
+            margin-bottom: 10px;
+        }
+
+        .modal-body p {
+            margin: 5px 0;
+        }
+
+        .modal-footer {
+            margin-top: 20px;
+            display: flex;
+            justify-content: flex-end;
+        }
+
+        .modal-footer button {
+            padding: 10px 20px;
+            background-color: #007bff;
+            border: none;
+            border-radius: 5px;
+            color: #fff;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+
+        .modal-footer button:hover {
+            background-color: #0056b3;
+        }
+
+        .back-to-editor {
+            margin-top: 20px;
+            text-align: center;
+        }
+
+        .back-to-editor button {
+            padding: 10px 20px;
+            background-color: #007bff;
+            border: none;
+            border-radius: 5px;
+            color: #fff;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+
+        .back-to-editor button:hover {
+            background-color: #0056b3;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Adicionar Carta TCG</h1>
+        <input type="text" id="search" placeholder="Pesquisar carta">
+        <ul class="card-list" id="card-list">
+            <!-- Lista de cartas será carregada aqui -->
+        </ul>
+    </div>
+
+   <!-- Modal para entrada de preço e quantidade -->
+ <div id="myModal" class="modal">
+     <div class="modal-content">
+         <div class="modal-header">
+             <h2>Adicionar ao Estoque</h2>
+             <button class="close">&times;</button>
+         </div>
+         <div class="modal-body">
+             <img id="modal-card-image" src="" alt="Card Image">
+             <p><strong>Nome:</strong> <span id="modal-card-name"></span></p>
+             <p><strong>Tipo:</strong> <span id="modal-card-type"></span></p>
+             <p><strong>Energia:</strong> <span id="modal-card-energy"></span></p>
+             <p><strong>Raridade:</strong> <span id="modal-card-rarity"></span></p>
+             <input type="number" id="modal-price" placeholder="Preço" step="0.01">
+             <input type="number" id="modal-quantity" placeholder="Quantidade" min="1">
+         </div>
+         <div class="modal-footer">
+             <button id="modal-add-button">Adicionar</button>
+         </div>
+     </div>
+ </div>
+
+
+    <div class="back-to-editor">
+        <button onclick="window.location.href='index.html'">Voltar ao Catálogo</button>
+    </div>
+
+    <script>
+        const apiUrl = 'https://api.pokemontcg.io/v2/cards';
+        let selectedCardId = null;
+
+        // Função para buscar e exibir cartas
+        document.getElementById('search').addEventListener('input', async (event) => {
+            const query = event.target.value;
+            if (query.length < 3) {
+                document.getElementById('card-list').innerHTML = '';
+                return;
+            }
+
+            try {
+                const response = await fetch(`${apiUrl}?q=name:${query}`);
+                if (!response.ok) throw new Error('Erro ao buscar cartas');
+                
+                const data = await response.json();
+                const cards = data.data;
+                const cardList = document.getElementById('card-list');
+                cardList.innerHTML = '';
+
+                if (!cards || cards.length === 0) {
+                    cardList.innerHTML = '<li>Nenhuma carta encontrada.</li>';
+                    return;
+                }
+
+                cards.forEach(card => {
+                    const listItem = document.createElement('li');
+                    listItem.innerHTML = `
+                        <img src="${card.images.small}" alt="${card.name}">
+                        <div class="card-info">
+                            <span><strong>${card.name}</strong></span>
+                            <button data-id="${card.id}" onclick="openModal('${card.id}')">Adicionar</button>
+                        </div>
+                    `;
+                    cardList.appendChild(listItem);
+                });
+            } catch (error) {
+                console.error(error);
+                document.getElementById('card-list').innerHTML = '<li>Erro ao carregar cartas.</li>';
+            }
+        });
+
+        // Função para abrir o modal
+        function openModal(cardId) {
+            selectedCardId = cardId;
+            fetch(`${apiUrl}/${cardId}`)
+                .then(response => response.json())
+                .then(data => {
+                    const card = data.data;
+                    document.getElementById('modal-card-image').src = card.images.small;
+                    document.getElementById('modal-card-name').textContent = card.name;
+                    document.getElementById('modal-card-type').textContent = card.types.join(', ');
+                    document.getElementById('modal-card-energy').textContent = card.energyType || 'Não disponível';
+                    document.getElementById('modal-card-rarity').textContent = card.rarity || 'Não disponível';
+                    document.getElementById('myModal').style.display = 'flex';
+                })
+                .catch(error => {
+                    console.error('Erro ao buscar a carta:', error);
+                    alert('Erro ao abrir o modal.');
+                });
+        }
+
+        // Função para fechar o modal
+        document.querySelector('.modal .close').onclick = function() {
+            document.getElementById('myModal').style.display = 'none';
+        }
+
+        // Função para adicionar a carta ao estoque
+        document.getElementById('modal-add-button').onclick = async function() {
+            const price = document.getElementById('modal-price').value;
+            const quantity = document.getElementById('modal-quantity').value;
+
+            if (!selectedCardId || !price || !quantity) {
+                alert('Por favor, preencha todos os campos.');
+                return;
+            }
+
+            try {
+                const response = await fetch(`${apiUrl}/${selectedCardId}`);
+                if (!response.ok) throw new Error('Erro ao buscar a carta');
+
+                const cardData = await response.json();
+                const card = cardData.data;
+
+                const stock = JSON.parse(localStorage.getItem('stock')) || [];
+                const existingCard = stock.find(c => c.id === selectedCardId);
+
+                if (!existingCard) {
+                    stock.push({
+                        id: selectedCardId,
+                        name: card.name,
+                        image: card.images.small,
+                        rarity: card.rarity || 'Não disponível',
+                        expansion: card.set.name || 'Não disponível',
+                        number: card.number || 'Não disponível',
+                        price: parseFloat(price),
+                        quantity: parseInt(quantity),
+                        type: card.types.join(', '),
+                        description: card.text || 'Não disponível',
+                        abilities: (card.abilities || []).map(a => a.name).join(', ')
+                    });
+                } else {
+                    existingCard.price = parseFloat(price);
+                    existingCard.quantity += parseInt(quantity);
+                }
+
+                localStorage.setItem('stock', JSON.stringify(stock));
+                document.getElementById('myModal').style.display = 'none';
+                alert('Carta adicionada ao estoque!');
+            } catch (error) {
+                console.error(error);
+                alert('Erro ao adicionar carta.');
+            }
+        };
+    </script>
+</body>
+</html>

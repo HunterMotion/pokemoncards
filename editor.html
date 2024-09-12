@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Editor de Cartas TCG</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: url('https://example.com/background-image.jpg') no-repeat center center fixed;
+            background-size: cover;
+            margin: 0;
+            padding: 0;
+            color: #333;
+        }
+
+        header {
+            background-color: rgba(255, 255, 255, 0.8);
+            padding: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .button {
+            padding: 10px 20px;
+            font-size: 16px;
+            border: none;
+            border-radius: 5px;
+            color: #fff;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+            text-decoration: none;
+        }
+
+        .button:hover {
+            background-color: #0056b3;
+        }
+
+        .back-button {
+            background-color: #dc3545;
+        }
+
+        .add-button {
+            background-color: #007bff;
+        }
+
+        .container {
+            padding: 20px;
+        }
+
+        .card {
+            background: rgba(255, 255, 255, 0.9);
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            padding: 10px;
+            margin: 10px;
+            text-align: center;
+            width: 150px;
+            display: inline-block;
+            vertical-align: top;
+        }
+
+        .card img {
+            width: 100px;
+            height: 140px;
+            object-fit: cover;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0,0,0,0.4);
+            justify-content: center;
+            align-items: center;
+        }
+
+        .modal-content {
+            background-color: #fefefe;
+            margin: 5% auto;
+            padding: 20px;
+            border: 1px solid #888;
+            width: 80%;
+            max-width: 500px;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        }
+
+        .modal-header, .modal-body, .modal-footer {
+            margin-bottom: 15px;
+        }
+
+        .modal-header {
+            padding: 10px;
+            border-bottom: 1px solid #ddd;
+        }
+
+        .modal-footer {
+            padding: 10px;
+            border-top: 1px solid #ddd;
+            text-align: right;
+        }
+
+        .modal-footer button {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: background-color 0.3s ease;
+        }
+
+        .modal-footer .confirm {
+            background-color: #28a745;
+            color: #fff;
+        }
+
+        .modal-footer .cancel {
+            background-color: #dc3545;
+            color: #fff;
+        }
+
+        .modal-footer .confirm:hover {
+            background-color: #218838;
+        }
+
+        .modal-footer .cancel:hover {
+            background-color: #c82333;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <a href="index.html" class="button back-button">Voltar ao Catálogo</a>
+        <a href="add-pokemon.html" class="button add-button">Adicionar Carta</a>
+        <h1>Editor de Cartas TCG</h1>
+    </header>
+    <div class="container" id="stock-container">
+        <!-- As cartas em estoque serão exibidas aqui -->
+    </div>
+
+    <!-- Modal de Edição -->
+    <div id="edit-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Editar Carta</h2>
+            </div>
+            <div class="modal-body">
+                <form id="edit-form">
+                    <label for="edit-quantity">Quantidade:</label>
+                    <input type="number" id="edit-quantity" min="1" required><br><br>
+                    <label for="edit-price">Preço (R$):</label>
+                    <input type="number" id="edit-price" step="0.01" min="0" required><br><br>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button class="confirm" id="save-changes">Salvar Alterações</button>
+                <button class="cancel" id="cancel-edit">Cancelar</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const stockContainer = document.getElementById('stock-container');
+            const editModal = document.getElementById('edit-modal');
+            const saveChangesButton = document.getElementById('save-changes');
+            const cancelEditButton = document.getElementById('cancel-edit');
+            const editForm = document.getElementById('edit-form');
+            let editCardIndex = null;
+
+            function displayStock() {
+                const stock = JSON.parse(localStorage.getItem('stock')) || [];
+                stockContainer.innerHTML = '';
+
+                if (stock.length === 0) {
+                    stockContainer.innerHTML = '<p>Não há cartas em estoque.</p>';
+                    return;
+                }
+
+                stock.forEach((card, index) => {
+                    const cardElement = document.createElement('div');
+                    cardElement.classList.add('card');
+                    cardElement.innerHTML = `
+                        <img src="${card.image}" alt="${card.name}">
+                        <h3>${card.name}</h3>
+                        <p>Quantidade: ${card.quantity}</p>
+                        <p>Preço: R$ ${card.price.toFixed(2)}</p>
+                        <button class="edit-button" data-index="${index}">Editar</button>
+                        <button class="delete-button" data-index="${index}">Excluir</button>
+                    `;
+                    stockContainer.appendChild(cardElement);
+                });
+
+                document.querySelectorAll('.edit-button').forEach(button => {
+                    button.addEventListener('click', (e) => {
+                        editCardIndex = parseInt(e.target.getAttribute('data-index'));
+                        const stock = JSON.parse(localStorage.getItem('stock')) || [];
+                        const card = stock[editCardIndex];
+                        document.getElementById('edit-quantity').value = card.quantity;
+                        document.getElementById('edit-price').value = card.price;
+                        editModal.style.display = 'flex';
+                    });
+                });
+
+                document.querySelectorAll('.delete-button').forEach(button => {
+                    button.addEventListener('click', (e) => {
+                        deleteCardIndex = parseInt(e.target.getAttribute('data-index'));
+                        deleteModal.style.display = 'flex';
+                    });
+                });
+            }
+
+            saveChangesButton.addEventListener('click', () => {
+                const stock = JSON.parse(localStorage.getItem('stock')) || [];
+                const quantity = document.getElementById('edit-quantity').value;
+                const price = document.getElementById('edit-price').value;
+
+                stock[editCardIndex].quantity = parseInt(quantity);
+                stock[editCardIndex].price = parseFloat(price);
+
+                localStorage.setItem('stock', JSON.stringify(stock));
+                editModal.style.display = 'none';
+                displayStock();
+            });
+
+            cancelEditButton.addEventListener('click', () => {
+                editModal.style.display = 'none';
+            });
+
+            displayStock();
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,599 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CARTAS POKEMON</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;800&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Poppins', sans-serif;
+            background: url('wallpaper.jpg') no-repeat center center fixed;
+            background-size: cover;
+            margin: 0;
+            padding: 0;
+            color: #eee;
+            overflow-x: hidden;
+        }
+
+        .editor-button {
+            width: 100px;
+            height: 40px;
+            background-color: #00a2ff;
+            color: #fff;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            position: fixed;
+            top: 10px;
+            right: 20px;
+            text-align: center;
+            line-height: 40px;
+            transition: background-color 0.3s ease;
+            z-index: 1000;
+        }
+
+        .editor-button:hover {
+            background-color: #005e95;
+        }
+
+        .filter-panel {
+            position: fixed;
+            left: 0;
+            top: 0;
+            width: 25%;
+            height: 100%;
+            background-color: rgba(255, 255, 255, 0.8);
+            color: #000000;
+            padding: 20px;
+            box-sizing: border-box;
+            overflow-y: auto;
+            z-index: 1000;
+            border-radius: 10px 0 0 10px; /* Bordas arredondadas */
+            box-shadow: 0 0 10px rgba(255, 255, 255, 0.5); /* Sombra para destaque */
+        }
+
+        .filter-panel h3 {
+            margin-top: 0;
+            font-size: 20px; /* Aumenta o tamanho da fonte para cabeçalhos */
+        }
+
+        .filter-panel label {
+            font-weight: 600;
+        }
+
+        .filter-panel select {
+            width: calc(100% - 10px);
+            margin-bottom: 10px;
+            padding: 10px;
+            border: 2px solid #00a2ff;
+            border-radius: 5px; /* Bordas arredondadas nos selects */
+            background-color: #ffffff; /* Fundo escuro para os selects */
+            color: #000000;
+        }
+
+        .clear-filters-btn {
+            background-color: #ff6347;
+            border: none;
+            color: white;
+            padding: 10px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            margin-top: 20px;
+            transition: background-color 0.3s ease;
+            display: block;
+            width: 100%;
+        }
+
+        .clear-filters-btn:hover {
+            background-color: #e53d2a;
+        }
+
+        .container {
+            padding: 20px;
+            margin-left: 25%; /* Ajuste para deixar espaço para o painel de filtros */
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            justify-content: center;
+        }
+
+        .card {
+            background: rgba(255, 255, 255, 0.9);
+            border-radius: 12px;
+            padding: 20px;
+            text-align: center;
+            width: 280px; /* Reduzido para caber no painel */
+            display: inline-block;
+            position: relative;
+            min-height: 400px;
+            box-sizing: border-box;
+            transition: transform 0.3s ease;
+            border: 2px solid #ffffff;
+        }
+
+        .card:hover {
+            transform: translateY(-10px);
+        }
+
+        .card img {
+            width: 200px; /* Reduzido para caber no painel */
+            height: 270px;
+            object-fit: cover;
+            border-radius: 8px;
+        }
+
+        .card .details {
+            text-align: center;
+            margin-top: 10px;
+            color: #000000;
+            font-weight: 800;
+        }
+
+        .card .details p {
+            font-size: 16px; /* Ajustado para o novo tamanho das cartas */
+            color: #000000;
+            margin: 4px 0;
+        }
+
+        .card .details .price {
+            font-size: 24px; /* Ajustado para o novo tamanho das cartas */
+            font-weight: bold;
+            color: #16c94f;
+            margin-top: 10px;
+        }
+
+        .add-to-cart-btn {
+            margin-top: 10px;
+            padding: 10px;
+            background-color: #00a2ff;
+            color: #fff;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px; /* Ajustado para o novo tamanho das cartas */
+            transition: background-color 0.3s ease;
+        }
+
+        .add-to-cart-btn:hover {
+            background-color: #005e95;
+        }
+
+        /* Sidebar do Carrinho */
+        .cart-sidebar {
+            position: fixed;
+            right: -100%;
+            top: 0;
+            width: 30%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.9);
+            color: #fff;
+            padding: 20px;
+            transition: right 0.5s ease;
+            z-index: 1000;
+        }
+
+        .cart-sidebar.open {
+            right: 0;
+        }
+
+        .cart-sidebar h2 {
+            margin-top: 0;
+        }
+
+        .cart-items {
+            margin: 20px 0;
+            max-height: 60vh;
+            overflow-y: auto;
+        }
+
+        .cart-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .cart-item button {
+            background-color: #ff6347;
+            border: none;
+            color: white;
+            padding: 5px 10px;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        .cart-item .quantity-controls {
+            display: flex;
+            align-items: center;
+        }
+
+        .cart-item .quantity-controls button {
+            background-color: #00a2ff;
+            border: none;
+            color: white;
+            padding: 5px 10px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 0 5px;
+        }
+
+        .cart-item .quantity-controls button:disabled {
+            background-color: #555;
+            cursor: not-allowed;
+        }
+
+        .close-cart {
+            background-color: #ff6347;
+            border: none;
+            color: white;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            position: absolute;
+            top: 20px;
+            right: 20px;
+        }
+
+        .clear-cart, .stock-decrement {
+            background-color: #ff6347;
+            border: none;
+            color: white;
+            padding: 10px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin-top: 20px;
+            display: block;
+            width: 100%;
+        }
+
+        .clear-cart:hover, .stock-decrement:hover {
+            background-color: #e53d2a;
+        }
+
+        /* Estilo para o alerta */
+        .alert {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: #00a2ff;
+            color: white;
+            padding: 10px 20px;
+            border-radius: 5px;
+            z-index: 1000;
+            font-size: 16px;
+        }
+    </style>
+</head>
+<body>
+    <button class="editor-button" id="editor-button">Carrinho</button>
+    <!-- Painel de Filtros -->
+<div class="filter-panel">
+    <h3>Filtrar por:</h3>
+    <label for="sort">Ordenar por:</label>
+    <select id="sort">
+        <option value="name-asc">Nome (A-Z)</option>
+        <option value="name-desc">Nome (Z-A)</option>
+        <option value="price-asc">Preço (Menor para Maior)</option>
+        <option value="price-desc">Preço (Maior para Menor)</option>
+    </select>
+    <h3>Categorias:</h3>
+    <label for="rarity">Raridade:</label>
+    <select id="rarity">
+        <option value="">Todos</option>
+        <option value="Double Rare">Double Rare</option>
+        <option value="Promo">Promo</option>
+    </select>
+    <label for="type">Tipo:</label>
+    <select id="type">
+        <option value="">Todos</option>
+        <option value="fighting">Lutador</option>
+        <!-- Opções de tipo serão preenchidas aqui -->
+    </select>
+    <label for="energy">Energia:</label>
+    <select id="energy">
+        <option value="">Todos</option>
+        <!-- Opções de energia serão preenchidas aqui -->
+    </select>
+    <!-- Botão de limpar filtros -->
+    <button class="clear-filters-btn" id="clear-filters">Limpar Filtros</button>
+</div>
+
+    <!-- Container das Cartas -->
+    <div class="container" id="stock-container">
+        <!-- As cartas em estoque serão exibidas aqui -->
+    </div>
+
+    <!-- Sidebar do Carrinho -->
+    <div class="cart-sidebar" id="cart-sidebar">
+    <button class="close-cart" id="close-cart">X</button>
+    <h2>Seu Carrinho</h2>
+    <div class="cart-items" id="cart-items">
+        <!-- Itens do carrinho serão exibidos aqui -->
+    </div>
+    <p>Total: R$ <span id="total-price">0.00</span></p> <!-- Adicione este elemento -->
+    <button class="clear-cart" id="clear-cart">Limpar Carrinho</button>
+    <button class="stock-decrement" id="stock-decrement">Dar Baixa no Estoque</button>
+</div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const stockContainer = document.getElementById('stock-container');
+            const cartSidebar = document.getElementById('cart-sidebar');
+            const cartItemsContainer = document.getElementById('cart-items');
+            const totalPriceElement = document.getElementById('total-price');
+            const closeCartButton = document.getElementById('close-cart');
+            const clearCartButton = document.getElementById('clear-cart');
+            const clearFiltersButton = document.getElementById('clear-filters');
+            const editorButton = document.getElementById('editor-button');
+            const sortSelect = document.getElementById('sort');
+            const raritySelect = document.getElementById('rarity');
+            const typeSelect = document.getElementById('type');
+            const stockDecrementButton = document.getElementById('stock-decrement');
+            let cart = [];
+
+            function displayStock(stock) {
+    // Filtra itens com estoque zero
+    const filteredStock = stock.filter(card => card.quantity > 0);
+
+    stockContainer.innerHTML = '';
+
+    if (filteredStock.length === 0) {
+        stockContainer.innerHTML = '<p>Não há cartas em estoque.</p>';
+        return;
+    }
+
+    filteredStock.forEach(card => {
+        const cardElement = document.createElement('div');
+        cardElement.classList.add('card');
+        cardElement.innerHTML = `
+            <img src="${card.image}" alt="${card.name}">
+            <div class="details">
+                <p>${card.rarity || 'Não disponível'}</p>
+                <p>${card.name}</p>
+                <p>Quantidade: ${card.quantity}</p>
+                <p class="price">R$ ${card.price.toFixed(2)}</p>
+                <button class="add-to-cart-btn" data-id="${card.id}">Adicionar ao Carrinho</button>
+            </div>
+        `;
+        stockContainer.appendChild(cardElement);
+    });
+
+    const addToCartButtons = document.querySelectorAll('.add-to-cart-btn');
+    addToCartButtons.forEach(button => {
+        button.addEventListener('click', addToCart);
+    });
+}
+
+function updateFilters() {
+    const stock = JSON.parse(localStorage.getItem('stock')) || [];
+
+    // Atualizar raridades
+    const rarities = new Set(stock.map(card => card.rarity).filter(rarity => rarity));
+    raritySelect.innerHTML = '<option value="">Todos</option>';
+    rarities.forEach(rarity => {
+        const option = document.createElement('option');
+        option.value = rarity;
+        option.textContent = rarity;
+        raritySelect.appendChild(option);
+    });
+
+    // Atualizar tipos
+    const types = new Set(stock.map(card => card.type).filter(type => type));
+    typeSelect.innerHTML = '<option value="">Todos</option>';
+    types.forEach(type => {
+        const option = document.createElement('option');
+        option.value = type;
+        option.textContent = type;
+        typeSelect.appendChild(option);
+    });
+}
+
+document.addEventListener('DOMContentLoaded', updateFilters);
+
+
+function updateRarityFilters() {
+    const stock = JSON.parse(localStorage.getItem('stock')) || [];
+    const rarities = new Set(stock.map(card => card.rarity));
+
+    const raritySelect = document.getElementById('rarity');
+    raritySelect.innerHTML = '<option value="">Todos</option>'; // Reinicia as opções
+
+    rarities.forEach(rarity => {
+        if (rarity) { // Garante que raridade não seja nula ou indefinida
+            const option = document.createElement('option');
+            option.value = rarity;
+            option.textContent = rarity;
+            raritySelect.appendChild(option);
+        }
+    });
+}
+
+// Chama a função ao carregar a página
+document.addEventListener('DOMContentLoaded', updateRarityFilters);
+
+
+function addToCart(event) {
+    const cardId = event.target.getAttribute('data-id');
+    const stock = JSON.parse(localStorage.getItem('stock')) || [];
+    const card = stock.find(c => c.id === cardId);
+    
+    const cartItem = cart.find(item => item.id === cardId);
+
+    if (cartItem) {
+        if (cartItem.quantity < card.quantity) {
+            cartItem.quantity++;
+        } else {
+            showAlert('Estoque insuficiente para adicionar mais desse item.');
+            return;
+        }
+    } else {
+        cart.push({ ...card, quantity: 1 });
+    }
+    
+    updateCart();
+    showAlert(`${card.name} adicionado ao carrinho!`);
+}
+
+            function updateCart() {
+    cartItemsContainer.innerHTML = '';
+    let totalPrice = 0;
+
+    cart.forEach((item, index) => {
+        const stock = JSON.parse(localStorage.getItem('stock')) || [];
+        const stockItem = stock.find(c => c.id === item.id);
+        totalPrice += parseFloat(item.price) * item.quantity;
+
+        const cartItemElement = document.createElement('div');
+        cartItemElement.classList.add('cart-item');
+        cartItemElement.innerHTML = `
+            <span>${item.name} - R$ ${item.price.toFixed(2)} (x${item.quantity})</span>
+            <div class="quantity-controls">
+                <button data-index="${index}" class="decrease-btn" ${item.quantity === 1 ? 'disabled' : ''}>-</button>
+                <span>${item.quantity}</span>
+                <button data-index="${index}" class="increase-btn" ${item.quantity >= stockItem.quantity ? 'disabled' : ''}>+</button>
+                <button data-index="${index}" class="remove-btn">Remover</button>
+            </div>
+        `;
+        cartItemsContainer.appendChild(cartItemElement);
+    });
+
+    const decreaseButtons = document.querySelectorAll('.decrease-btn');
+    const increaseButtons = document.querySelectorAll('.increase-btn');
+    const removeButtons = document.querySelectorAll('.remove-btn');
+
+    decreaseButtons.forEach(button => {
+        button.addEventListener('click', adjustQuantity);
+    });
+    increaseButtons.forEach(button => {
+        button.addEventListener('click', adjustQuantity);
+    });
+    removeButtons.forEach(button => {
+        button.addEventListener('click', removeFromCart);
+    });
+
+    totalPriceElement.textContent = totalPrice.toFixed(2);
+}
+
+            function adjustQuantity(event) {
+    const index = event.target.getAttribute('data-index');
+    const item = cart[index];
+    const stock = JSON.parse(localStorage.getItem('stock')) || [];
+    const stockItem = stock.find(c => c.id === item.id);
+
+    if (!stockItem) return; // Verifique se o item existe no estoque
+
+    if (event.target.classList.contains('decrease-btn')) {
+        if (item.quantity > 1) {
+            item.quantity--;
+        }
+    } else if (event.target.classList.contains('increase-btn')) {
+        if (item.quantity < stockItem.quantity) {
+            item.quantity++;
+        }
+    }
+
+    updateCart();
+}
+
+
+            function removeFromCart(event) {
+                const index = event.target.getAttribute('data-index');
+                cart.splice(index, 1);
+                updateCart();
+            }
+
+            function showAlert(message) {
+    console.log(`Alert: ${message}`); // Adicione isso para depuração
+    const alertDiv = document.createElement('div');
+    alertDiv.className = 'alert';
+    alertDiv.textContent = message;
+    document.body.appendChild(alertDiv);
+    setTimeout(() => {
+        alertDiv.remove();
+    }, 3000);
+}
+
+
+            closeCartButton.addEventListener('click', () => {
+                cartSidebar.classList.remove('open');
+            });
+
+            clearCartButton.addEventListener('click', () => {
+                cart = [];
+                updateCart();
+            });
+
+            clearFiltersButton.addEventListener('click', () => {
+                sortSelect.value = 'name-asc';
+                raritySelect.value = '';
+                typeSelect.value = '';
+                fetchStock();
+            });
+
+            stockDecrementButton.addEventListener('click', () => {
+                const password = prompt('Digite a senha para dar baixa no estoque:');
+                if (password === '84953622') {
+                    const stock = JSON.parse(localStorage.getItem('stock')) || [];
+                    cart.forEach(item => {
+                        const stockItem = stock.find(c => c.id === item.id);
+                        if (stockItem) {
+                            stockItem.quantity -= item.quantity;
+                        }
+                    });
+                    localStorage.setItem('stock', JSON.stringify(stock));
+                    cart = [];
+                    updateCart();
+                    showAlert('Estoque atualizado com sucesso!');
+                } else {
+                    showAlert('Senha incorreta!');
+                }
+            });
+
+            editorButton.addEventListener('click', () => {
+                cartSidebar.classList.add('open');
+            });
+
+            sortSelect.addEventListener('change', fetchStock);
+            raritySelect.addEventListener('change', fetchStock);
+            typeSelect.addEventListener('change', fetchStock);
+
+            function fetchStock() {
+                const stock = JSON.parse(localStorage.getItem('stock')) || [];
+                const filteredStock = filterStock(stock);
+                const sortedStock = sortStock(filteredStock);
+                displayStock(sortedStock);
+            }
+
+            function filterStock(stock) {
+                const rarity = raritySelect.value;
+                const type = typeSelect.value;
+
+                return stock.filter(card => {
+                    return (rarity === '' || card.rarity === rarity) &&
+                           (type === '' || card.type === type);
+                });
+            }
+
+            function sortStock(stock) {
+                const sortValue = sortSelect.value;
+                return stock.sort((a, b) => {
+                    if (sortValue === 'name-asc') {
+                        return a.name.localeCompare(b.name);
+                    } else if (sortValue === 'name-desc') {
+                        return b.name.localeCompare(a.name);
+                    } else if (sortValue === 'price-asc') {
+                        return a.price - b.price;
+                    } else if (sortValue === 'price-desc') {
+                        return b.price - a.price;
+                    }
+                });
+            }
+
+            fetchStock();
+        });
+    </script>
+</body>
+</html>
